@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PulseTask | Executive Todo & Productivity Dashboard</title>
+  <meta name="description" content="A next-generation executive task management dashboard with real-time analytics, kanban and list views, pomodoro timer, and persistent web storage.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Ambient background glow gradients -->
+  <div class="ambient-glow glow-top-left"></div>
+  <div class="ambient-glow glow-bottom-right"></div>
+  <div class="ambient-glow glow-center"></div>
+
+  <!-- Confetti Canvas -->
+  <canvas id="confettiCanvas" class="confetti-canvas"></canvas>
+
+  <div class="dashboard-wrapper">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-icon">
+          <i class="fa-solid fa-bolt-lightning"></i>
+        </div>
+        <div class="brand-text">
+          <h2>Pulse<span>Task</span></h2>
+          <span class="brand-sub">Workspace Studio</span>
+        </div>
+      </div>
+
+      <button class="btn-primary-gradient add-task-quick-btn" id="openTaskModalBtn">
+        <i class="fa-solid fa-plus"></i>
+        <span>New Task</span>
+        <kbd class="shortcut-badge">N</kbd>
+      </button>
+
+      <nav class="nav-menu">
+        <div class="nav-section-title">OVERVIEW</div>
+        <ul class="nav-list">
+          <li class="nav-item active" data-filter="all">
+            <a href="javascript:void(0)" class="nav-link">
+              <i class="fa-solid fa-layer-group"></i>
+              <span class="nav-label">All Tasks</span>
+              <span class="task-count-badge" id="badgeAll">0</span>
+            </a>
+          </li>
+          <li class="nav-item" data-filter="today">
+            <a href="javascript:void(0)" class="nav-link">
+              <i class="fa-solid fa-calendar-day"></i>
+              <span class="nav-label">Due Today</span>
+              <span class="task-count-badge" id="badgeToday">0</span>
+            </a>
+          </li>
+          <li class="nav-item" data-filter="upcoming">
+            <a href="javascript:void(0)" class="nav-link">
+              <i class="fa-solid fa-calendar-week"></i>
+              <span class="nav-label">Upcoming</span>
+              <span class="task-count-badge" id="badgeUpcoming">0</span>
+            </a>
+          </li>
+          <li class="nav-item" data-filter="important">
+            <a href="javascript:void(0)" class="nav-link">
+              <i class="fa-solid fa-star"></i>
+              <span class="nav-label">High Priority</span>
+              <span class="task-count-badge badge-coral" id="badgeImportant">0</span>
+            </a>
+          </li>
+          <li class="nav-item" data-filter="completed">
+            <a href="javascript:void(0)" class="nav-link">
+              <i class="fa-solid fa-circle-check"></i>
+              <span class="nav-label">Completed</span>
+              <span class="task-count-badge badge-green" id="badgeCompleted">0</span>
+            </a>
+          </li>
+        </ul>
+
+        <div class="nav-section-title">CATEGORIES</div>
+        <ul class="nav-list" id="categoryNavList">
+          <li class="nav-item" data-category="all">
+            <a href="javascript:void(0)" class="nav-link">
+              <span class="category-bullet bullet-rainbow"></span>
+              <span class="nav-label">All Projects</span>
+            </a>
+          </li>
+          <li class="nav-item" data-category="Work">
+            <a href="javascript:void(0)" class="nav-link">
+              <span class="category-bullet bullet-indigo"></span>
+              <span class="nav-label">Work & Career</span>
+              <span class="task-count-badge" id="catCountWork">0</span>
+            </a>
+          </li>
+          <li class="nav-item" data-category="Design">
+            <a href="javascript:void(0)" class="nav-link">
+              <span class="category-bullet bullet-cyan"></span>
+              <span class="nav-label">UI/UX & Design</span>
+              <span class="task-count-badge" id="catCountDesign">0</span>
+            </a>
+          </li>
+          <li class="nav-item" data-category="Personal">
+            <a href="javascript:void(0)" class="nav-link">
+              <span class="category-bullet bullet-purple"></span>
+              <span class="nav-label">Personal Life</span>
+              <span class="task-count-badge" id="catCountPersonal">0</span>
+            </a>
+          </li>
+          <li class="nav-item" data-category="Health">
+            <a href="javascript:void(0)" class="nav-link">
+              <span class="category-bullet bullet-emerald"></span>
+              <span class="nav-label">Health & Fitness</span>
+              <span class="task-count-badge" id="catCountHealth">0</span>
+            </a>
+          </li>
+          <li class="nav-item" data-category="Finance">
+            <a href="javascript:void(0)" class="nav-link">
+              <span class="category-bullet bullet-amber"></span>
+              <span class="nav-label">Finance & Budget</span>
+              <span class="task-count-badge" id="catCountFinance">0</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+
+      <!-- Sidebar Mini Focus Timer Widget -->
+      <div class="sidebar-timer-card">
+        <div class="timer-header">
+          <div class="timer-title">
+            <i class="fa-solid fa-stopwatch"></i> Focus Pomodoro
+          </div>
+          <span class="timer-mode-tag" id="pomodoroMode">Focus</span>
+        </div>
+        <div class="timer-digits" id="timerDisplay">25:00</div>
+        <div class="timer-controls">
+          <button class="timer-btn" id="startTimerBtn" title="Start/Pause">
+            <i class="fa-solid fa-play" id="timerIcon"></i>
+          </button>
+          <button class="timer-btn timer-btn-secondary" id="resetTimerBtn" title="Reset">
+            <i class="fa-solid fa-rotate-right"></i>
+          </button>
+          <button class="timer-btn timer-btn-secondary" id="skipTimerBtn" title="Short Break">
+            <i class="fa-solid fa-forward-step"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Storage Info Footer -->
+      <div class="sidebar-footer">
+        <div class="storage-indicator">
+          <div class="storage-icon-wrap"><i class="fa-solid fa-database"></i></div>
+          <div class="storage-text">
+            <span>WebStorage Active</span>
+            <small id="storageUsage">0 KB used</small>
+          </div>
+        </div>
+        <div class="sidebar-footer-actions">
+          <button class="icon-tool-btn" id="exportDataBtn" title="Export JSON Backup">
+            <i class="fa-solid fa-download"></i>
+          </button>
+          <button class="icon-tool-btn" id="importDataTrigger" title="Import JSON Backup">
+            <i class="fa-solid fa-upload"></i>
+          </button>
+          <input type="file" id="importFileInput" accept=".json" style="display:none;">
+          <button class="icon-tool-btn danger" id="resetAllDataBtn" title="Reset to Demo Data">
+            <i class="fa-solid fa-arrow-rotate-left"></i>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Top Bar Header -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle Navigation">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+          <div class="greeting-box">
+            <h1 class="greeting-title" id="greetingText">Good morning, Commander 👋</h1>
+            <p class="greeting-subtitle" id="currentDateText">Loading current date...</p>
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <!-- Search Bar -->
+          <div class="search-bar-wrapper">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input type="text" id="searchInput" placeholder="Search tasks, tags, notes... (Press /)" autocomplete="off">
+            <button class="search-clear-btn" id="searchClearBtn" style="display:none;"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+
+          <!-- View Switcher -->
+          <div class="view-switch-group">
+            <button class="view-btn active" id="listViewBtn" title="List View">
+              <i class="fa-solid fa-list-check"></i>
+            </button>
+            <button class="view-btn" id="boardViewBtn" title="Kanban Board View">
+              <i class="fa-solid fa-table-columns"></i>
+            </button>
+          </div>
+
+          <!-- Quick Action -->
+          <button class="btn-primary-gradient header-add-btn" id="topAddBtn">
+            <i class="fa-solid fa-plus"></i>
+            <span>Add Task</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Analytics / Stats Row -->
+      <section class="metrics-grid">
+        <!-- Metric Card 1: Total Tasks -->
+        <div class="metric-card">
+          <div class="metric-info">
+            <span class="metric-title">Total Tasks</span>
+            <div class="metric-value" id="metricTotal">0</div>
+            <div class="metric-meta text-indigo">
+              <i class="fa-solid fa-chart-simple"></i>
+              <span id="metricTotalSub">Across all categories</span>
+            </div>
+          </div>
+          <div class="metric-icon-box bg-indigo-gradient">
+            <i class="fa-solid fa-list-ul"></i>
+          </div>
+        </div>
+
+        <!-- Metric Card 2: Pending Tasks -->
+        <div class="metric-card">
+          <div class="metric-info">
+            <span class="metric-title">In Progress</span>
+            <div class="metric-value" id="metricPending">0</div>
+            <div class="metric-meta text-amber">
+              <i class="fa-solid fa-clock"></i>
+              <span id="metricPendingSub">Requires attention</span>
+            </div>
+          </div>
+          <div class="metric-icon-box bg-amber-gradient">
+            <i class="fa-solid fa-hourglass-half"></i>
+          </div>
+        </div>
+
+        <!-- Metric Card 3: High Priority -->
+        <div class="metric-card">
+          <div class="metric-info">
+            <span class="metric-title">High Priority</span>
+            <div class="metric-value" id="metricImportant">0</div>
+            <div class="metric-meta text-coral">
+              <i class="fa-solid fa-fire"></i>
+              <span id="metricImportantSub">Urgent milestones</span>
+            </div>
+          </div>
+          <div class="metric-icon-box bg-coral-gradient">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+          </div>
+        </div>
+
+        <!-- Metric Card 4: Progress Rate -->
+        <div class="metric-card progress-metric-card">
+          <div class="metric-info">
+            <span class="metric-title">Completion Rate</span>
+            <div class="metric-value"><span id="metricRate">0</span>%</div>
+            <div class="metric-meta text-emerald">
+              <i class="fa-solid fa-circle-check"></i>
+              <span id="metricCompletedSub">0 tasks done</span>
+            </div>
+          </div>
+          <!-- Circular Progress Indicator -->
+          <div class="circular-progress-wrap">
+            <svg class="circular-progress" viewBox="0 0 80 80">
+              <circle class="circle-bg" cx="40" cy="40" r="34"></circle>
+              <circle class="circle-bar" id="circularBar" cx="40" cy="40" r="34"></circle>
+            </svg>
+            <div class="circular-percent" id="circularPercent">0%</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Dashboard Controls & Filters -->
+      <section class="controls-toolbar">
+        <div class="toolbar-left">
+          <div class="active-filter-indicator">
+            <span class="filter-headline" id="currentViewTitle">All Tasks</span>
+            <span class="filter-count-badge" id="filteredCountBadge">0 tasks</span>
+          </div>
+          <div class="search-tag-chip" id="activeSearchTag" style="display: none;">
+            <span>Search: <strong id="activeSearchQuery"></strong></span>
+            <i class="fa-solid fa-xmark" id="removeSearchFilter"></i>
+          </div>
+        </div>
+
+        <div class="toolbar-right">
+          <!-- Sort dropdown -->
+          <div class="sort-dropdown-wrap">
+            <label for="sortSelect" class="sort-label"><i class="fa-solid fa-arrow-down-wide-short"></i> Sort by:</label>
+            <select id="sortSelect" class="custom-select">
+              <option value="createdAt_desc">Newest First</option>
+              <option value="createdAt_asc">Oldest First</option>
+              <option value="dueDate_asc">Due Date (Earliest)</option>
+              <option value="priority_desc">Priority (High to Low)</option>
+              <option value="title_asc">Title (A-Z)</option>
+            </select>
+          </div>
+
+          <!-- Priority quick filter buttons -->
+          <div class="priority-pill-filters">
+            <button class="priority-pill active" data-priority="all">All</button>
+            <button class="priority-pill pill-high" data-priority="high">High</button>
+            <button class="priority-pill pill-medium" data-priority="medium">Medium</button>
+            <button class="priority-pill pill-low" data-priority="low">Low</button>
+          </div>
+
+          <!-- Batch Action -->
+          <div class="batch-actions-wrap">
+            <button class="btn-glass" id="clearCompletedBtn" title="Clear all completed tasks">
+              <i class="fa-solid fa-broom"></i>
+              <span>Clear Done</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Main Display Views Container -->
+      <div class="views-container">
+        <!-- 1. List View -->
+        <section class="tasks-list-view" id="tasksListView">
+          <div class="tasks-container" id="taskListContainer">
+            <!-- Dynamic task cards render here -->
+          </div>
+        </section>
+
+        <!-- 2. Kanban Board View (Hidden by default) -->
+        <section class="tasks-board-view" id="tasksBoardView" style="display: none;">
+          <div class="kanban-grid">
+            <!-- Column 1: To Do -->
+            <div class="kanban-col" data-status="todo">
+              <div class="kanban-col-header">
+                <div class="kanban-col-title">
+                  <span class="col-dot dot-amber"></span>
+                  <h3>To Do</h3>
+                </div>
+                <span class="kanban-count" id="kanbanCountTodo">0</span>
+              </div>
+              <div class="kanban-col-body" id="kanbanListTodo" ondragover="event.preventDefault()">
+                <!-- Tasks drop here -->
+              </div>
+            </div>
+
+            <!-- Column 2: In Progress -->
+            <div class="kanban-col" data-status="in-progress">
+              <div class="kanban-col-header">
+                <div class="kanban-col-title">
+                  <span class="col-dot dot-indigo"></span>
+                  <h3>In Progress</h3>
+                </div>
+                <span class="kanban-count" id="kanbanCountInProgress">0</span>
+              </div>
+              <div class="kanban-col-body" id="kanbanListInProgress" ondragover="event.preventDefault()">
+                <!-- Tasks drop here -->
+              </div>
+            </div>
+
+            <!-- Column 3: Completed -->
+            <div class="kanban-col" data-status="completed">
+              <div class="kanban-col-header">
+                <div class="kanban-col-title">
+                  <span class="col-dot dot-emerald"></span>
+                  <h3>Completed</h3>
+                </div>
+                <span class="kanban-count" id="kanbanCountCompleted">0</span>
+              </div>
+              <div class="kanban-col-body" id="kanbanListCompleted" ondragover="event.preventDefault()">
+                <!-- Tasks drop here -->
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Empty State Message -->
+        <div class="empty-state" id="emptyState" style="display: none;">
+          <div class="empty-icon-wrap">
+            <i class="fa-solid fa-clipboard-check"></i>
+          </div>
+          <h3 id="emptyStateTitle">No tasks found</h3>
+          <p id="emptyStateSub">All caught up, or no tasks match your current filter criteria.</p>
+          <button class="btn-primary-gradient" id="emptyStateCreateBtn">
+            <i class="fa-solid fa-plus"></i> Create New Task
+          </button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal: Create / Edit Task -->
+  <div class="modal-overlay" id="taskModalOverlay">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <div class="modal-header-icon" id="modalHeaderIcon">
+            <i class="fa-solid fa-pen-to-square"></i>
+          </div>
+          <div>
+            <h2 id="modalTitle">Create New Task</h2>
+            <p id="modalSubtitle">Fill in the task specifics and schedule.</p>
+          </div>
+        </div>
+        <button class="modal-close-btn" id="closeModalBtn" aria-label="Close dialog">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form id="taskForm" class="modal-form">
+        <input type="hidden" id="editTaskId" value="">
+
+        <div class="form-group">
+          <label for="taskTitleInput" class="form-label">Task Title <span class="required">*</span></label>
+          <input type="text" id="taskTitleInput" class="form-input" placeholder="e.g. Finalize Q4 Cloud Infrastructure Architecture" required>
+        </div>
+
+        <div class="form-group">
+          <label for="taskDescriptionInput" class="form-label">Notes & Details</label>
+          <textarea id="taskDescriptionInput" class="form-textarea" rows="3" placeholder="Provide extra context, links, or execution steps..."></textarea>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group col-half">
+            <label for="taskCategorySelect" class="form-label">Category / Project</label>
+            <select id="taskCategorySelect" class="form-input">
+              <option value="Work">Work & Career</option>
+              <option value="Design">UI/UX & Design</option>
+              <option value="Personal">Personal Life</option>
+              <option value="Health">Health & Fitness</option>
+              <option value="Finance">Finance & Budget</option>
+            </select>
+          </div>
+
+          <div class="form-group col-half">
+            <label for="taskPrioritySelect" class="form-label">Priority Level</label>
+            <select id="taskPrioritySelect" class="form-input">
+              <option value="low">Low Priority</option>
+              <option value="medium" selected>Medium Priority</option>
+              <option value="high">High Priority (Urgent)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group col-half">
+            <label for="taskDueDateInput" class="form-label">Due Date</label>
+            <input type="date" id="taskDueDateInput" class="form-input">
+          </div>
+
+          <div class="form-group col-half">
+            <label for="taskStatusSelect" class="form-label">Current Status</label>
+            <select id="taskStatusSelect" class="form-input">
+              <option value="todo">To Do</option>
+              <option value="in-progress">In Progress</option>
+              <option value="completed">Completed</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Subtasks Builder Section -->
+        <div class="subtasks-section">
+          <div class="subtasks-header">
+            <label class="form-label mb-0"><i class="fa-solid fa-list-check"></i> Subtasks / Checklist</label>
+            <span class="subtask-count-hint" id="modalSubtaskCount">0 items</span>
+          </div>
+
+          <div class="subtask-input-row">
+            <input type="text" id="newSubtaskInput" class="form-input subtask-field" placeholder="Add a checklist step and press Enter...">
+            <button type="button" class="btn-glass subtask-add-btn" id="addSubtaskBtn">
+              <i class="fa-solid fa-plus"></i> Add
+            </button>
+          </div>
+
+          <ul class="modal-subtask-list" id="modalSubtaskList">
+            <!-- Subtask items rendered here -->
+          </ul>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" id="cancelModalBtn">Cancel</button>
+          <button type="submit" class="btn-primary-gradient modal-submit-btn" id="saveTaskBtn">
+            <i class="fa-solid fa-floppy-disk"></i>
+            <span id="saveBtnText">Save Task</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
